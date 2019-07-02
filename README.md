@@ -1,29 +1,30 @@
-# dicom_vuer
+# DICOM Vuer
 
-## Project setup
-```
-yarn install
-```
+A Vue.js component for viewing DICOM items in Girder.
 
-### Compiles and hot-reloads for development
-```
-yarn run serve
-```
+### Usage
 
-### Compiles and minifies for production
-```
-yarn run build
-```
+The ``vuetify`` and ``@girder/components`` npm packages are expected in your downstream environment.
+Vuetify is expected to be installed in the Vue environment at runtime, and ``girderRest`` must be
+injected into this component, and the easiest way to do that is to inject a ``RestClient`` instance.
+However, you could pass any axios instance that is properly configured to communicate with the API.
+If you do the latter, you do not need to install ``@girder/components`` as a peer dependency.
 
-### Run your tests
-```
-yarn run test
-```
+```vue
+<script>
+import GirderDicomViewer from '@girder/dicom-viewer';
 
-### Lints and fixes files
-```
-yarn run lint
-```
+export default {
+  components: { GirderDicomViewer },
+  data: () => ({
+    files: [],
+  }),
+}
+</script>
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+<template>
+v-app
+  girder-dicom-viewer(files="files")
+</template>
+
+```
