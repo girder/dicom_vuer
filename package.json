@@ -1,7 +1,8 @@
 {
   "name": "@girder/dicom-viewer",
   "private": false,
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "main": "dist/girder_dicom_viewer.umd.js",
   "scripts": {
     "build": "vue-cli-service build --target lib --name girder_dicom_viewer src/DicomViewer.vue",
     "lint": "vue-cli-service lint"
