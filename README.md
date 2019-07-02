@@ -24,7 +24,7 @@ export default {
 
 <template>
 v-app
-  girder-dicom-viewer(files="files")
+  girder-dicom-viewer(:files="files")
 </template>
 
 ```
