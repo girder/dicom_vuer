@@ -100,7 +100,7 @@ export default {
       } else {
         try {
           this.loading = true;
-          const data = await this.fetchDataFunction(files[i]);
+          const data = await this.fetchDataFunction(this.files[i]);
           this.image = daikon.Series.parseImage(new DataView(data));
           this.tags = filterTags(Object.values(this.image.tags));
           if (this.useCache) {
@@ -110,7 +110,7 @@ export default {
             };
           }
         } catch (error) {
-          this.$emit('error:load', {error, file: files[i], i });
+          this.$emit('error:load', {error, file: this.files[i], i });
         } finally {
           this.loading = false;
         }
