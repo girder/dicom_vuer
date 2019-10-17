@@ -1,7 +1,7 @@
 {
   "name": "@girder/dicom-viewer",
   "private": false,
-  "version": "0.5.0",
+  "version": "0.7.0",
   "main": "dist/girder_dicom_viewer.umd.js",
   "scripts": {
     "build": "vue-cli-service build --target lib --name girder_dicom_viewer src/DicomViewer.vue",
@@ -59,6 +59,6 @@
     "last 2 versions"
   ],
   "peerDependencies": {
-    "vuetify": "^1.5.16"
+    "vuetify": "^2.0.0"
   }
 }

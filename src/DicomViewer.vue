@@ -3,7 +3,7 @@ v-col
   .dicom-image
   div(v-if="index >= 0") {{ index + 1 }} of {{ files.length }} &mdash; {{ files[index].name }}
   v-slider.mx-1(:min="0", :max="files.length - 1", v-model="index")
-  v-row(justify-center)
+  v-row(justify="center")
     v-btn(@click="index = 0")
       v-icon mdi-rewind
     v-btn(@click="index = Math.max(0, index - 1)")
@@ -12,7 +12,7 @@ v-col
       v-icon mdi-skip-next
     v-btn(@click="index = files.length - 1")
       v-icon mdi-fast-forward
-  v-progress-linear(:indeterminate="loading")
+  v-progress-linear(v-show="loading", indeterminate)
   table(v-if="tags.length")
     thead
       tr
