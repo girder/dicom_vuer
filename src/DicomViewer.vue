@@ -1,28 +1,5 @@
 <template lang="pug">
-v-col
-  .dicom-image
-  div(v-if="index >= 0") {{ index + 1 }} of {{ files.length }} &mdash; {{ files[index].name }}
-  v-slider.mx-1(:min="0", :max="files.length - 1", v-model="index")
-  v-row(justify="center")
-    v-btn.mx-1(@click="index = 0", :disabled="index <= 0")
-      v-icon mdi-rewind
-    v-btn.mx-1(@click="index = Math.max(0, index - 1)", :disabled="index <= 0")
-      v-icon mdi-skip-previous
-    v-btn.mx-1(@click="index = Math.min(index + 1, files.length - 1)",
-        :disabled="index >= files.length - 1")
-      v-icon mdi-skip-next
-    v-btn.mx-1(@click="index = files.length - 1", :disabled="index >= files.length - 1")
-      v-icon mdi-fast-forward
-  v-progress-linear(v-show="loading", indeterminate)
-  table(v-if="tags.length")
-    thead
-      tr
-        th Tag
-        th Value
-    tbody
-      tr(v-for="tag in tags")
-        td {{ tag.name }}
-        td {{ tag.value }}
+.dicom-viewer(ref="dicom-image")
 </template>
 
 <script>
@@ -36,10 +13,6 @@ import vtkOpenGLRenderWindow from 'vtk.js/Sources/Rendering/OpenGL/RenderWindow'
 import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
 import vtkRenderWindow from 'vtk.js/Sources/Rendering/Core/RenderWindow';
 import vtkRenderWindowInteractor from 'vtk.js/Sources/Rendering/Core/RenderWindowInteractor';
-
-const defaultFileFetch = async file => (await this.girderRest.get(`file/${file._id}/download`, {
-  responseType: 'arraybuffer',
-})).data;
 
 const extractImageData = (data) => {
   const [cspace, rspace] = data.getPixelSpacing();
@@ -68,11 +41,14 @@ const filterTags = tags => tags.filter(
   .sort((a, b) => (a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1));
 
 export default {
-  inject: ['girderRest'],
   props: {
     // Array of files. The default behavior assumes each element is a Girder file Object
     files: {
       type: Array,
+      required: true,
+    },
+    index: {
+      type: Number,
       required: true,
     },
     // Alternative async function to map a file in the files Array to its data
@@ -84,38 +60,18 @@ export default {
       type: Boolean,
       default: true,
     },
+    tags: {
+      type: Array,
+      default: () => [],
+    }
   },
   data: () => ({
-    index: -1,
     image: null,
     loading: false,
-    tags: [],
   }),
   watch: {
-    async index(i) {
-      // TODO limit size of cache? Eviction policy?
-      const cached = this.useCache ? this.cache[this.files[i]._id] : false;
-      if (cached) {
-        this.image = cached.image;
-        this.tags = cached.tags;
-      } else {
-        try {
-          this.loading = true;
-          const data = await this.fetchDataFunction(this.files[i]);
-          this.image = daikon.Series.parseImage(new DataView(data));
-          this.tags = filterTags(Object.values(this.image.tags));
-          if (this.useCache) {
-            this.cache[this.files[i]._id] = {
-              image: this.image, // TODO should we instead cache result of extractImageData?
-              tags: this.tags,
-            };
-          }
-        } catch (error) {
-          this.$emit('error:load', {error, file: this.files[i], i });
-        } finally {
-          this.loading = false;
-        }
-      }
+    index(i) {
+      this.indexChanged(i);
     },
     image(data) {
       const mapper = vtkImageMapper.newInstance();
@@ -127,7 +83,7 @@ export default {
         this.autoZoom();
         this.autoLevel(imageData);
         this.vtk.interactor.initialize();
-        this.vtk.interactor.bindEvents(this.$el.querySelector('.dicom-image'));
+        this.vtk.interactor.bindEvents(this.$refs['dicom-image']);
         this.vtk.interactor.start();
         this.started = true;
       }
@@ -144,7 +100,7 @@ export default {
     renWin.addRenderer(this.vtk.renderer);
 
     const glWin = vtkOpenGLRenderWindow.newInstance();
-    glWin.setContainer(this.$el.querySelector('.dicom-image'));
+    glWin.setContainer(this.$refs['dicom-image']);
     glWin.setSize(512, 512);
     renWin.addView(glWin);
 
@@ -158,7 +114,8 @@ export default {
 
     this.vtk.camera = this.vtk.renderer.getActiveCameraAndResetIfCreated();
     this.started = false;
-    this.index = 0;
+    
+    this.indexChanged(this.index);
   },
   methods: {
     autoLevel(imageData) {
@@ -177,6 +134,33 @@ export default {
       }
       this.vtk.camera.setViewUp(...up);
       this.vtk.camera.setPosition(...pos);
+    },
+    async indexChanged(i) {
+      if (typeof this.index === 'number' && this.index >= 0) {
+        // TODO limit size of cache? Eviction policy?
+        const cached = this.useCache ? this.cache[this.files[i]._id] : false;
+        if (cached) {
+          this.image = cached.image;
+          this.$emit('update:tags', cached.tags);
+        } else {
+          try {
+            this.loading = true;
+            const data = await this.fetchDataFunction(this.files[i]);
+            this.image = daikon.Series.parseImage(new DataView(data));
+            this.$emit('update:tags', filterTags(Object.values(this.image.tags)));
+            if (this.useCache) {
+              this.cache[this.files[i]._id] = {
+                image: this.image, // TODO should we instead cache result of extractImageData?
+                tags: this.tags,
+              };
+            }
+          } catch (error) {
+            this.$emit('error:load', {error, file: this.files[i], i });
+          } finally {
+            this.loading = false;
+          }
+        }
+      }
     },
   },
 };
