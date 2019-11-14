@@ -57,8 +57,5 @@
   "browserslist": [
     "> 1%",
     "last 2 versions"
-  ],
-  "peerDependencies": {
-    "vuetify": "^2.0.0"
-  }
+  ]
 }
